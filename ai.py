@@ -33,7 +33,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for i in range(0, len(bot_reply), max_length):
         await update.message.reply_text(bot_reply[i:i + max_length])
 
-# Biến toàn cục lưu ứng dụng Telegram để xử lý webhook
 telegram_app = None
 
 async def handle_webhook(request):
@@ -55,14 +54,18 @@ async def main():
     telegram_app.add_handler(MessageHandler(filters.TEXT, handle_message))
     
     await telegram_app.initialize()
-    await telegram_app.start()
+    
+    # Ép xóa sạch mọi webhook cũ trước khi thiết lập mới
+    await telegram_app.bot.delete_webhook(drop_pending_updates=True)
 
-    # Thiết lập Webhook tự động với Telegram dựa trên domain Render của ní
+    # Đăng ký webhook mới với đường dẫn từ Render
     render_url = os.environ.get("RENDER_EXTERNAL_URL")
     if render_url:
         webhook_url = f"{render_url}/webhook"
         await telegram_app.bot.set_webhook(url=webhook_url)
-        print(f"Đã tự động cấu hình Webhook: {webhook_url}")
+        print(f"Đã kích hoạt Webhook thành công tại: {webhook_url}")
+
+    await telegram_app.start()
 
     app_web = web.Application()
     app_web.router.add_get("/", handle_web)
@@ -74,7 +77,7 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-    print("Web server và Webhook bot đã khởi động thành công!")
+    print("Server và Webhook bot đã sẵn sàng hoạt động!")
     await asyncio.Event().wait()
 
 if __name__ == '__main__':

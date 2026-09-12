@@ -55,25 +55,25 @@ async def handle_web(request):
 async def main():
     global telegram_app
     
-    # 1. Ép xóa sạch webhook cũ trước khi khởi động qua HTTP API trực tiếp
+    # Dọn sạch webhook cũ qua HTTP API
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook?drop_pending_updates=true") as resp:
             print("Đã dọn sạch webhook cũ trên Telegram:", await resp.text())
 
-    # 2. Khởi tạo ứng dụng Telegram
+    # Khởi tạo ứng dụng Telegram
     telegram_app = ApplicationBuilder().token(TOKEN).build()
     telegram_app.add_handler(MessageHandler(filters.TEXT, handle_message))
     await telegram_app.initialize()
     await telegram_app.start()
 
-    # 3. Đăng ký Webhook mới với URL của Render
+    # Đăng ký Webhook mới với URL của Render
     render_url = os.environ.get("RENDER_EXTERNAL_URL")
     if render_url:
         webhook_url = f"{render_url}/webhook"
         await telegram_app.bot.set_webhook(url=webhook_url)
         print(f"Đã gán Webhook mới tại: {webhook_url}")
 
-    # 4. Chạy Web Server aiohttp để nhận request từ Render và Telegram
+    # Chạy Web Server aiohttp
     app = web.Application()
     app.router.add_get("/", handle_web)
     app.router.add_post("/webhook", handle_webhook)

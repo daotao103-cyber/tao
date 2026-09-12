@@ -1,0 +1,6 @@
+groq
+distro
+python-telegram-bot
+anyio
+httpx
+pydantic

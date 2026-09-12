@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filte
 from aiohttp import web
 
 GROQ_API_KEY = "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"
-TOKEN = "8817837689:AAGlgQVY3nL-CVd-nhqJ_BnfxLMBIJgWgKM"
+TOKEN = "8982539903:AAH42KwxKz4EH4uMRz-RWmQNvuMD83FYfLw"
 
 # Danh sách ID Telegram được phép dùng bot (Thay số bên dưới bằng ID thật của ní)
 ALLOWED_USER_IDS = [123456789] 

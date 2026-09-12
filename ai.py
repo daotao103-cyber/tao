@@ -6,14 +6,19 @@ from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filte
 GROQ_API_KEY = "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"
 TOKEN = "8982539903:AAH42KwxKz4EH4uMRz-RWmQNvuMD83FYfLw"
 
+# Đảm bảo đây đúng là Telegram User ID của ní, nếu chưa chắc chắn hãy nhắn tin thử để xem log hiện số mấy
 ALLOWED_USER_IDS = [8341514824] 
 
 client = Groq(api_key=GROQ_API_KEY)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
+    user_name = update.message.from_user.username or update.message.from_user.first_name
+    print(f"🎯 Đã nhận tin nhắn từ [{user_name}] (ID: {user_id}): {update.message.text}")
+
     if user_id not in ALLOWED_USER_IDS:
-        await update.message.reply_text("Xin lỗi, ní không có quyền sử dụng bot này!")
+        print(f"❌ Cảnh báo: User ID {user_id} không có trong danh sách ALLOWED_USER_IDS nên bị từ chối!")
+        await update.message.reply_text(f"Xin lỗi, User ID của ní ({user_id}) không có quyền sử dụng bot này!")
         return
 
     user_message = update.message.text
@@ -30,6 +35,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     max_length = 4000
     for i in range(0, len(bot_reply), max_length):
         await update.message.reply_text(bot_reply[i:i + max_length])
+    print(f"✅ Đã phản hồi tin nhắn thành công!")
 
 def main():
     application = ApplicationBuilder().token(TOKEN).build()

@@ -53,7 +53,7 @@ async def main():
     
     await application.initialize()
     await application.start()
-    await application.updater.start_polling()
+    await application.updater.start_polling(drop_pending_updates=True)
     
     print("Bot và Web server giả lập đã khởi động thành công!")
     

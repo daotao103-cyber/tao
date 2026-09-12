@@ -1,7 +1,3 @@
+python-telegram-bot[webhooks]
 groq
-distro
-python-telegram-bot
-anyio
-httpx
-pydantic
 aiohttp

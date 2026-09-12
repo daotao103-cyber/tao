@@ -8,7 +8,6 @@ from aiohttp import web
 GROQ_API_KEY = "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"
 TOKEN = "8982539903:AAH42KwxKz4EH4uMRz-RWmQNvuMD83FYfLw"
 
-# ID Telegram của ní đã được thiết lập chính xác
 ALLOWED_USER_IDS = [8341514824] 
 
 client = Groq(api_key=GROQ_API_KEY)
@@ -23,10 +22,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         chat_completion = client.chat.completions.create(
             messages=[{"role": "user", "content": user_message}],
-            model="openai/gpt-oss-20b",
+            model="llama-3.1-8b-instant",  # Đã sửa lại đúng tên model của Groq
         )
         bot_reply = chat_completion.choices[0].message.content
     except Exception as e:
+        print(f"Lỗi Groq: {e}")
         bot_reply = "Lỗi kết nối Groq rồi ní ơi!"
 
     max_length = 4000

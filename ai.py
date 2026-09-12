@@ -1,9 +1,7 @@
 import os
-import asyncio
 from groq import Groq
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
-from aiohttp import web
 
 GROQ_API_KEY = "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"
 TOKEN = "8982539903:AAH42KwxKz4EH4uMRz-RWmQNvuMD83FYfLw"
@@ -33,52 +31,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for i in range(0, len(bot_reply), max_length):
         await update.message.reply_text(bot_reply[i:i + max_length])
 
-telegram_app = None
-
-async def handle_webhook(request):
-    try:
-        data = await request.json()
-        update = Update.de_json(data, telegram_app.bot)
-        await telegram_app.process_update(update)
-        return web.Response(text="OK")
-    except Exception as e:
-        print(f"Lỗi Webhook: {e}")
-        return web.Response(text="Error", status=500)
-
-async def handle_web(request):
-    return web.Response(text="Bot is running via Webhook!")
-
-async def main():
-    global telegram_app
-    telegram_app = ApplicationBuilder().token(TOKEN).build()
-    telegram_app.add_handler(MessageHandler(filters.TEXT, handle_message))
-    
-    await telegram_app.initialize()
-    
-    # Ép xóa sạch mọi webhook cũ trước khi thiết lập mới
-    await telegram_app.bot.delete_webhook(drop_pending_updates=True)
-
-    # Đăng ký webhook mới với đường dẫn từ Render
-    render_url = os.environ.get("RENDER_EXTERNAL_URL")
-    if render_url:
-        webhook_url = f"{render_url}/webhook"
-        await telegram_app.bot.set_webhook(url=webhook_url)
-        print(f"Đã kích hoạt Webhook thành công tại: {webhook_url}")
-
-    await telegram_app.start()
-
-    app_web = web.Application()
-    app_web.router.add_get("/", handle_web)
-    app_web.router.add_post("/webhook", handle_webhook)
+def main():
+    application = ApplicationBuilder().token(TOKEN).build()
+    application.add_handler(MessageHandler(filters.TEXT, handle_message))
     
     port = int(os.environ.get("PORT", 10000))
-    runner = web.AppRunner(app_web)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-
-    print("Server và Webhook bot đã sẵn sàng hoạt động!")
-    await asyncio.Event().wait()
+    render_url = os.environ.get("RENDER_EXTERNAL_URL")
+    
+    if render_url:
+        webhook_url = f"{render_url}/webhook"
+        print(f"Khởi động Bot qua Webhook chính thức tại: {webhook_url}")
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=port,
+            url_path="webhook",
+            webhook_url=webhook_url,
+            drop_pending_updates=True
+        )
+    else:
+        print("Khởi động Bot qua Polling...")
+        application.run_polling(drop_pending_updates=True)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

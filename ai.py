@@ -1,4 +1,6 @@
 import os
+import asyncio
+from aiohttp import web
 from groq import Groq
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
@@ -10,6 +12,8 @@ ALLOWED_USER_IDS = [8341514824]
 client = Groq(api_key=GROQ_API_KEY)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
     user_id = update.message.from_user.id
     user_name = update.message.from_user.username or update.message.from_user.first_name
     print(f"🎯 Nhận tin từ {user_name} ({user_id}): {update.message.text}")
@@ -33,12 +37,35 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(bot_reply[i:i + max_length])
     print("✅ Đã phản hồi thành công!")
 
-def main():
+# Web server giả lập để giữ cổng cho Render không bị ngủ đông
+async def handle_web(request):
+    return web.Response(text="Bot is running with polling!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle_web)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"Web server giữ cổng đã chạy trên port {port}")
+
+async def main():
+    # 1. Khởi động web server phụ để giữ cổng
+    await start_web_server()
+
+    # 2. Khởi chạy Telegram Bot bằng Polling
     application = ApplicationBuilder().token(TOKEN).build()
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
     
-    print("Bot đang chạy ở chế độ Polling trên Render...")
-    application.run_polling(drop_pending_updates=True)
+    print("Bot đang khởi động Polling...")
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling(drop_pending_updates=True)
+    
+    # Giữ cho chương trình chạy liên tục
+    await asyncio.Event().wait()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
